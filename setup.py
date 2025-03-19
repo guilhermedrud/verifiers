@@ -19,7 +19,6 @@ setup(
         "duckduckgo-search",
         "liger-kernel>=0.5.2",
         "vllm>=0.7.3",
-        "brave-search>=0.1.8",
         "trl @ git+https://github.com/huggingface/trl.git",
     ],
 )
