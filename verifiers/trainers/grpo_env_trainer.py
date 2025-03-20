@@ -64,8 +64,10 @@ class GRPOEnvTrainer(GRPOTrainer):
     def _generate_and_score_completions(
          self, inputs: dict[str, Union[torch.Tensor, Any]]   
     ) -> dict[str, Union[torch.Tensor, Any]]:
+        #print(inputs)
         device = self.accelerator.device
         prompts = [x["prompt"] for x in inputs] # type: ignore
+        answers = [x["answer"] for x in inputs]
         prompts_text = [maybe_apply_chat_template(example, self.processing_class)["prompt"] for example in inputs] # type: ignore
         prompt_inputs = self.processing_class(
             prompts_text, return_tensors="pt", padding=True, padding_side="left", add_special_tokens=False # type: ignore
@@ -83,9 +85,11 @@ class GRPOEnvTrainer(GRPOTrainer):
 
         # Gather the original prompts in message dict form, not the text form
         all_prompts = gather_object(prompts)
+        all_answers = gather_object(answers)
         if self.accelerator.is_main_process:
             env_result = self.env.generate(
                 prompts=all_prompts,
+                answers=all_answers,
                 llm=self.llm,
                 sampling_params=self.sampling_params,
             )

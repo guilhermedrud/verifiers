@@ -57,6 +57,7 @@ class MultiStepEnv(Environment):
              llm: LLM,
              sampling_params: SamplingParams) -> List[Dict[str, Any]]:
         
+        print(states)
         live_indices = [i for i, s in enumerate(states) if not s["completed"]]
         messages_to_step = [states[i]["messages"] for i in live_indices]
         llm_responses = llm.chat(messages_to_step, sampling_params=sampling_params, use_tqdm=False) # type: ignore
@@ -90,7 +91,7 @@ class MultiStepEnv(Environment):
                 state["completion_ids"] = state["completion_ids"][:sampling_params.max_tokens]
                 state["completion_mask"] = state["completion_mask"][:len(state["completion_ids"])]
             else:
-                state["messages"].append(self.env_response(state["messages"]))
+                state["messages"].append(self.env_response(state["messages"], state['answer']))
 
             if not len(state["completion_mask"]) == len(state["completion_ids"]):
                 print(state["messages"])
@@ -111,24 +112,31 @@ class MultiStepEnv(Environment):
 
         return states
 
-    def generate(self, prompts: List[List[Dict[str, Any]]],
-                 llm: LLM,
-                 sampling_params: SamplingParams,
-                 **kwargs: Any) -> Dict[str, List[Sequence[int]] | List[str] |  List[List[Dict[str, Any]]]]:
+    def generate(
+        self,
+        prompts: List[List[Dict[str, Any]]],
+        answers: List[int],
+        llm: LLM,
+        sampling_params: SamplingParams,
+        **kwargs: Any
+    ) -> Dict[str, List[Sequence[int]] | List[str] |  List[List[Dict[str, Any]]]]:
         custom_sp = sampling_params.clone()
         for k, v in self.sampling_args.items():
             setattr(custom_sp, k, v)
 
         # initialize state variables
         all_completed = False
+        # print(prompts)
+        # print(answers)
         states = [{
             "messages": m,
+            "answer": a,
             "prompt_messages": len(m),
             "prompt_ids": [],
             "completed": False,
             "completion_ids": [],
             "completion_mask": []
-        } for m in prompts]
+        } for m,a in zip(prompts,answers)]
 
         # main loop
         while not all_completed:
