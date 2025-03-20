@@ -57,7 +57,7 @@ class MultiStepEnv(Environment):
              llm: LLM,
              sampling_params: SamplingParams) -> List[Dict[str, Any]]:
         
-        print(states)
+        #print(states)
         live_indices = [i for i, s in enumerate(states) if not s["completed"]]
         messages_to_step = [states[i]["messages"] for i in live_indices]
         llm_responses = llm.chat(messages_to_step, sampling_params=sampling_params, use_tqdm=False) # type: ignore

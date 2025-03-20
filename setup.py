@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="verifiers",
-    version="0.1.3",
+    version="0.1.5",
     author="William Brown",
     author_email="williambrown97@gmail.com",
     description="Verifiers for reinforcement learning with LLMs",
