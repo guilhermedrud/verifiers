@@ -10,17 +10,16 @@ from ..imports import LLM, SamplingParams, VLLMClient  # type: ignore
 
 from verifiers.envs.environment import Environment
 
-
-custom_chat_template = """
-{% for message in messages %}
-{{ '<|{}|>\n'.format(message['role']) }}
-{{ message['content'] }}
-{% endfor %}
-{% if add_generation_prompt %}
-<|assistant|>\n
-<think>\n
-{% endif %}
-"""
+def extract_after_last_assistant(text: str) -> str:
+    marker = "<｜Assistant｜>"
+    eos_marker = "<｜end▁of▁sentence｜>"
+    last_occurrence = text.rfind(marker)
+    if last_occurrence == -1:
+        return ""  # Return empty string if marker is not found
+    result = text[last_occurrence + len(marker):].strip()
+    if result.endswith(eos_marker):
+        result = result[:-len(eos_marker)].strip()
+    return result
 
 class MultiStepEnv(Environment):
     def __init__(self,
