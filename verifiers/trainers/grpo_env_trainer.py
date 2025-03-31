@@ -64,7 +64,7 @@ class GRPOEnvTrainer(GRPOTrainer):
     def _generate_and_score_completions(
          self, inputs: dict[str, Union[torch.Tensor, Any]]   
     ) -> dict[str, Union[torch.Tensor, Any]]:
-        #print(inputs)
+        print(inputs)
         device = self.accelerator.device
         prompts = [x["prompt"] for x in inputs] # type: ignore
         answers = [x["answer"] for x in inputs]
