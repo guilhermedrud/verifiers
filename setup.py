@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="verifiers",
-    version="0.1.5",
+    version="0.1.6",
     author="William Brown",
     author_email="williambrown97@gmail.com",
     description="Verifiers for reinforcement learning with LLMs",
@@ -16,9 +16,8 @@ setup(
         "peft",
         "wandb",
         "rich",
-        "duckduckgo-search",
         "liger-kernel>=0.5.2",
         "vllm>=0.7.3",
-        "trl @ git+https://github.com/huggingface/trl.git",
+        "trl==0.16.0",
     ],
 )

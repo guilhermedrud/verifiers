@@ -1,0 +1,9 @@
+resources:
+  cloud: aws  # Change to your preferred cloud
+
+file_mounts:
+  ~/packages/: /path/to/local/whl/files  # Sync local folder with remote
+
+setup: |
+  pip install ~/packages/custom_library.whl
+  pip install -r requirements.txt

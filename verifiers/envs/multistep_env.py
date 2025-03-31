@@ -6,10 +6,21 @@ from typing import List, Dict, Sequence, Any, Union, Tuple
 
 from datasets import Dataset
 from trl.trainer.grpo_trainer import RewardFunc
-from ..imports import LLM, SamplingParams  # type: ignore
+from ..imports import LLM, SamplingParams, VLLMClient  # type: ignore
 
 from verifiers.envs.environment import Environment
 
+
+custom_chat_template = """
+{% for message in messages %}
+{{ '<|{}|>\n'.format(message['role']) }}
+{{ message['content'] }}
+{% endfor %}
+{% if add_generation_prompt %}
+<|assistant|>\n
+<think>\n
+{% endif %}
+"""
 
 class MultiStepEnv(Environment):
     def __init__(self,
@@ -54,13 +65,15 @@ class MultiStepEnv(Environment):
 
     def step(self,
              states: List[Dict[str, Any]],
-             llm: LLM,
+             llm_client: VLLMClient,
              sampling_params: SamplingParams) -> List[Dict[str, Any]]:
         
         #print(states)
         live_indices = [i for i, s in enumerate(states) if not s["completed"]]
         messages_to_step = [states[i]["messages"] for i in live_indices]
-        llm_responses = llm.chat(messages_to_step, sampling_params=sampling_params, use_tqdm=False) # type: ignore
+
+        #llm_responses = llm.chat(messages_to_step, sampling_params=sampling_params, use_tqdm=False, chat_template=custom_chat_template) # type: ignore
+        client.generate()
 
         #for i, j in enumerate(live_indices):
         def update_state(j, llm_response):
