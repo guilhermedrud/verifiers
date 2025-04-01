@@ -10,16 +10,57 @@ from ..imports import LLM, SamplingParams, VLLMClient  # type: ignore
 
 from verifiers.envs.environment import Environment
 
-def extract_after_last_assistant(text: str) -> str:
-    marker = "<｜Assistant｜>"
-    eos_marker = "<｜end▁of▁sentence｜>"
-    last_occurrence = text.rfind(marker)
-    if last_occurrence == -1:
-        return ""  # Return empty string if marker is not found
-    result = text[last_occurrence + len(marker):].strip()
-    if result.endswith(eos_marker):
-        result = result[:-len(eos_marker)].strip()
-    return result
+from vllm import RequestOutput, CompletionOutput
+
+# def extract_after_last_assistant(text: str) -> str:
+#     marker = "<｜Assistant｜>"
+#     eos_marker = "<｜end▁of▁sentence｜>"
+#     last_occurrence = text.rfind(marker)
+#     if last_occurrence == -1:
+#         return ""  # Return empty string if marker is not found
+#     result = text[last_occurrence + len(marker):].strip()
+#     if result.endswith(eos_marker):
+#         result = result[:-len(eos_marker)].strip()
+#     return result
+
+def vllm_client_chat(llm_client, messages_to_step, tokenizer, **kwargs):
+    parsed_chats = [
+        tokenizer.apply_chat_template(
+            messages,
+            tokenize=True, 
+            add_generation_prompt=True, 
+            return_tensors="pt"
+        ) for messages in messages_to_step
+    ]
+    responses = llm_client.generate([tokenizer.decode(chat[0]) for chat in parsed_chats], **kwargs)
+    struct_responses = []
+    for response in responses:
+        if not isinstance(response[0],list):
+            response = [response]
+        if isinstance(response[0],list):
+            outputs = [
+                CompletionOutput(
+                    index = i,
+                    text = tokenizer.decode(resp),
+                    token_ids = resp,
+                    cumulative_logprob=None,
+                    finish_reason=None,
+                    stop_reason=None,
+                    logprobs=None
+                ) for i, resp in enumerate(response)
+            ]
+            struct_responses.append(outputs)
+    outputs = [
+        RequestOutput(
+            request_id=None,
+            prompt_token_ids= chat[0],
+            prompt= tokenizer.decode(chat[0]),
+            prompt_logprobs=None,
+            outputs=response,
+            finished=None
+        ) for chat,response in zip(parsed_chats, struct_responses)
+    ]
+    return outputs
 
 class MultiStepEnv(Environment):
     def __init__(self,
@@ -72,7 +113,7 @@ class MultiStepEnv(Environment):
         messages_to_step = [states[i]["messages"] for i in live_indices]
 
         #llm_responses = llm.chat(messages_to_step, sampling_params=sampling_params, use_tqdm=False, chat_template=custom_chat_template) # type: ignore
-        client.generate()
+        llm_responses = vllm_client_chat(llm_client,messages_to_step,self.tokenizer, max_tokens=1024)
 
         #for i, j in enumerate(live_indices):
         def update_state(j, llm_response):
