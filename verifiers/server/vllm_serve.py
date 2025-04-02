@@ -24,6 +24,9 @@ import torch.distributed as dist
 from trl import TrlParser
 from trl.import_utils import is_fastapi_available, is_pydantic_available, is_uvicorn_available, is_vllm_available
 
+from vllm.outputs import RequestOutput
+from typing import List, Dict, Sequence, Any, Union
+
 import PIL
 
 if is_fastapi_available():
@@ -93,7 +96,8 @@ class WeightSyncWorker(Worker):
                 Total number of participating processes in the update group.
         """
         if self.pynccl_comm is not None:
-            raise RuntimeError("Weight update group already initialized. Call close_communicator first.")
+            self.close_communicator()
+            # raise RuntimeError("Weight update group already initialized. Call close_communicator first.")
 
         # Get the rank of the current worker in the global world group.
         rank = get_world_group().rank
@@ -286,6 +290,55 @@ def main(script_args: ScriptArguments):
         ```
         """
         return {"tensor_parallel_size": llm.llm_engine.parallel_config.tensor_parallel_size}
+    
+    class ChatResponse(BaseModel):
+        completions: list[Any]
+
+    class ChatRequest(BaseModel):
+        prompts: list[list[dict[str, Any]]]
+        n: int = 1
+        repetition_penalty: float = 1.0
+        temperature: float = 1.0
+        top_p: float = 1.0
+        top_k: int = -1
+        min_p: float = 0.0
+        max_tokens: int = 16
+        guided_decoding_regex: Optional[str] = None
+
+    
+    @app.post("/chat/", response_model=ChatResponse)
+    async def chat(request: ChatRequest):
+
+        if request.guided_decoding_regex is not None:
+            guided_decoding = GuidedDecodingParams(backend="outlines", regex=request.guided_decoding_regex)
+        else:
+            guided_decoding = None
+
+        # Sampling parameters
+        sampling_params = SamplingParams(
+            n=request.n,
+            repetition_penalty=request.repetition_penalty,
+            temperature=request.temperature,
+            top_p=request.top_p,
+            top_k=request.top_k,
+            min_p=request.min_p,
+            max_tokens=request.max_tokens,
+            guided_decoding=guided_decoding,
+        )
+
+
+        print(request.prompts)
+
+        completions = llm.chat(request.prompts,
+                   sampling_params=sampling_params,
+                   use_tqdm=False)
+
+        print(completions[0].__dict__)
+
+        response = {'completions': [{'outputs': {'text': completion.outputs[0].text, 'token_ids': completion.outputs[0].token_ids}, 'prompt_token_ids': completion.prompt_token_ids} for completion in completions]}
+
+        return response
+
 
     class GenerateRequest(BaseModel):
         prompts: list[str]
@@ -369,7 +422,7 @@ def main(script_args: ScriptArguments):
             "multi_modal_data": {"image": image},
         },
         sampling_params=sampling_params)
-        print(all_outputs)
+        # print(all_outputs)
         completion_ids = [list(output.token_ids) for outputs in all_outputs for output in outputs.outputs]
         return {"completion_ids": completion_ids}
 

@@ -1,4 +1,4 @@
-import verifiers as vf
+from verifiers import verifiers as vf
 from verifiers.tools import calculator
 from verifiers.prompts import CALCULATOR_FEW_SHOT
 

@@ -5,6 +5,8 @@ from typing import List, Dict, Sequence, Any, Union
 
 from datasets import Dataset
 
+from verifiers.server.vllm_client import VLLMClient
+
 from ..imports import LLM, SamplingParams  # type: ignore
 from verifiers.envs.environment import Environment
 
@@ -42,12 +44,18 @@ class SimpleEnv(Environment):
 
     def generate(self, prompts: List[List[Dict[str, Any]]],
                  llm: LLM,
-                 sampling_params: SamplingParams,
+
+                 n,
+                 repetition_penalty,
+                 temperature,
+                 top_p,
+                 top_k,
+                 min_p,
+                 max_tokens,
+                 guided_decoding_regex,
+
                  **kwargs: Any) -> Dict[str, List[Sequence[int]] | List[str] | List[List[Dict[str, Any]]]]:
-        
-        custom_sp = sampling_params.clone() 
-        for k, v in self.sampling_args.items():
-            setattr(custom_sp, k, v)
+
         states = [{
             "messages": m,
             "prompt_ids": [],
@@ -56,11 +64,18 @@ class SimpleEnv(Environment):
         } for m in prompts]
 
         # get completions
-        completions = llm.chat(prompts, sampling_params=custom_sp, use_tqdm=False) # type: ignore
+        # completions = llm.chat(prompts, sampling_params=custom_sp, use_tqdm=False) # type: ignore
+        # for i, completion in enumerate(completions):
+        #     states[i]["messages"].append({"role": "assistant", "content": completion.outputs[0].text})
+        #     states[i]["prompt_ids"] = list(completion.prompt_token_ids) # type: ignore
+        #     states[i]["completion_ids"] = list(completion.outputs[0].token_ids)
+        #     states[i]["completion_mask"] = [1] * len(states[i]["completion_ids"])
+
+        completions = llm.chat(prompts, n=n, repetition_penalty=repetition_penalty, temperature=temperature, top_p=top_p, top_k=top_k, min_p=min_p, max_tokens=max_tokens, guided_decoding_regex=guided_decoding_regex) # type: ignore
         for i, completion in enumerate(completions):
-            states[i]["messages"].append({"role": "assistant", "content": completion.outputs[0].text})
-            states[i]["prompt_ids"] = list(completion.prompt_token_ids) # type: ignore
-            states[i]["completion_ids"] = list(completion.outputs[0].token_ids)
+            states[i]["messages"].append({"role": "assistant", "content": completion['outputs']['text']})
+            states[i]["prompt_ids"] = list(completion['prompt_token_ids']) # type: ignore
+            states[i]["completion_ids"] = list(completion['outputs']['token_ids'])
             states[i]["completion_mask"] = [1] * len(states[i]["completion_ids"])
 
         output = {

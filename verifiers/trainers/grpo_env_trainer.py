@@ -11,6 +11,16 @@ from transformers import (
     is_wandb_available,
     Trainer,
 )
+
+
+from verifiers.server.vllm_client import VLLMClient
+
+# monkey patch vllm client
+import trl.extras.vllm_client
+trl.extras.vllm_client.VLLMClient = VLLMClient
+
+print(VLLMClient.__dict__)
+
 from transformers.utils import is_peft_available
 from trl import GRPOTrainer, GRPOConfig
 from trl.data_utils import apply_chat_template, maybe_apply_chat_template
@@ -43,6 +53,7 @@ class GRPOEnvTrainer(GRPOTrainer):
             peft_config: Optional["PeftConfig"] = None,
             **kwargs,
     ):
+        self.vllm_client = None
         if not args.use_vllm: # type: ignore
             raise ValueError("vLLM must be enabled for GRPOEnvTrainer")
         if not (callable(reward_funcs) or (isinstance(reward_funcs, list) and all(callable(f) for f in reward_funcs))): 
@@ -59,12 +70,14 @@ class GRPOEnvTrainer(GRPOTrainer):
             peft_config=peft_config,
             **kwargs,
         )
+        self.vllm_client.close_communicator()
+        self.vllm_client = VLLMClient(args.vllm_server_host, args.vllm_server_port, connection_timeout=args.vllm_server_timeout)
         self.env = env
 
     def _generate_and_score_completions(
          self, inputs: dict[str, Union[torch.Tensor, Any]]   
     ) -> dict[str, Union[torch.Tensor, Any]]:
-        print(inputs)
+        print("Inputs: ", inputs)
         device = self.accelerator.device
         prompts = [x["prompt"] for x in inputs] # type: ignore
         answers = [x["answer"] for x in inputs]
@@ -86,12 +99,34 @@ class GRPOEnvTrainer(GRPOTrainer):
         # Gather the original prompts in message dict form, not the text form
         all_prompts = gather_object(prompts)
         all_answers = gather_object(answers)
+
+        # 
+        # n=self.num_generations,
+        # repetition_penalty=self.repetition_penalty,
+        # temperature=self.temperature,
+        # top_p=self.top_p,
+        # top_k=-1 if self.top_k is None else self.top_k,
+        # min_p=0.0 if self.min_p is None else self.min_p,
+        # max_tokens=self.max_completion_length,
+        # guided_decoding_regex=self.guided_decoding_regex,
+        # 
+
         if self.accelerator.is_main_process:
             env_result = self.env.generate(
                 prompts=all_prompts,
                 answers=all_answers,
-                llm=self.llm,
-                sampling_params=self.sampling_params,
+
+                llm=self.vllm_client,
+                n=self.num_generations,
+                repetition_penalty=self.repetition_penalty,
+                temperature=self.temperature,
+                top_p=self.top_p,
+                top_k=-1 if self.top_k is None else self.top_k,
+                min_p=0.0 if self.min_p is None else self.min_p,
+                max_tokens=self.max_completion_length,
+                guided_decoding_regex=self.guided_decoding_regex,
+
+                # sampling_params=self.sampling_params,
             )
             completion_ids = env_result['ids']
             completion_messages = env_result['messages']

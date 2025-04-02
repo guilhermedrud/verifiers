@@ -126,6 +126,64 @@ class VLLMClient:
             logger.info(f"Server is not up yet. Retrying in {retry_interval} seconds...")
             time.sleep(retry_interval)
 
+    def chat(
+        self,
+        prompts: list[list[dict[str, str]]],
+        n: int = 1,
+        repetition_penalty: float = 1.0,
+        temperature: float = 1.0,
+        top_p: float = 1.0,
+        top_k: int = -1,
+        min_p: float = 0.0,
+        max_tokens: int = 16,
+        guided_decoding_regex: Optional[str] = None,
+    ) -> list[list[str]]:
+        """
+        Generates model completions for the provided prompts.
+
+        Args:
+            prompts (`list[str]`):
+                List of text prompts for which the model will generate completions.
+            n (`int`, *optional*, defaults to `1`):
+                Number of completions to generate for each prompt.
+            repetition_penalty (`float`, *optional*, defaults to `1.0`):
+                Parameter for repetition penalty. 1.0 means no penalty.
+            temperature (`float`, *optional*, defaults to `1.0`):
+                Temperature parameter for sampling. Higher values increase diversity.
+            top_p (`float`, *optional*, defaults to `1.0`):
+                Top-p sampling parameter.`1.0` means no truncation.
+            top_k (`int`, *optional*, defaults to `-1`):
+                Top-k sampling parameter. `-1` means no truncation.
+            min_p (`float`, *optional*, defaults to `0.0`):
+                Minimum probability for sampling.
+            max_tokens (`int`, *optional*, defaults to `16`):
+                Maximum number of tokens to generate for each prompt.
+            guided_decoding_regex (`str` or `None`, *optional*, defaults to `None`):
+                Regular expression to guide the decoding process.
+
+        Returns:
+            `list[list[int]]`:
+                List of lists of token IDs representing the model-generated completions for each prompt.
+        """
+
+        url = f"http://{self.host}:{self.server_port}/chat"
+        response = self.session.post(
+            url,
+            json={
+                "prompts": prompts,
+                "n": n,
+                "repetition_penalty": repetition_penalty,
+                "temperature": temperature,
+                "top_p": top_p,
+                "top_k": top_k,
+                "min_p": min_p,
+                "max_tokens": max_tokens,
+                "guided_decoding_regex": guided_decoding_regex,
+            },
+        )
+        print(response)
+        return response.json()['completions']
+
     def generate_multimodal(
         self,
         prompts: list[dict[str, str]],
