@@ -115,7 +115,6 @@ class GRPOEnvTrainer(GRPOTrainer):
             env_result = self.env.generate(
                 prompts=all_prompts,
                 answers=all_answers,
-
                 llm=self.vllm_client,
                 n=self.num_generations,
                 repetition_penalty=self.repetition_penalty,
@@ -126,6 +125,7 @@ class GRPOEnvTrainer(GRPOTrainer):
                 max_tokens=self.max_completion_length,
                 guided_decoding_regex=self.guided_decoding_regex,
 
+                df_row=inputs,
                 # sampling_params=self.sampling_params,
             )
             completion_ids = env_result['ids']
@@ -248,7 +248,7 @@ class GRPOEnvTrainer(GRPOTrainer):
                     # For logging
                     table = {
                         "step": [str(self.state.global_step)] * len(rewards),
-                        "prompt": prompts_to_log,
+                        "prompt": str(prompts_to_log),
                         "completion": completions_to_log,
                         "reward": rewards.tolist(),
                     }

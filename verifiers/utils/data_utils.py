@@ -34,6 +34,13 @@ def extract_hash_answer(text: str) -> str | None:
         return None
     return text.split("####")[1].strip()
 
+def format_img_prompt(prompt: str, image: str):
+    messages = []
+    # {'type': 'text', 'text': p}, {"type": "image_url", "image_url": {'url': 'file:'+row[i]['image']}}
+    messages.append({'role': 'user', 'content': [{'type': 'text', 'text': prompt}, {'type': 'image_url', 'image_url': {'url': 'file:'+image}}] })
+    # print('Messages: ', messages)
+    return messages
+
 def format_prompt(prompt: str,
                   system_prompt: str | None = None,
                   few_shot: List[Dict[str, str]] | None = None,
@@ -45,6 +52,15 @@ def format_prompt(prompt: str,
         messages.extend(few_shot)
     messages.append({"role": "user", "content": prompt})
     return messages
+
+def preprocess_img_dataset(dataset):
+    dataset = dataset.map(lambda x: {
+        'prompt': format_img_prompt(x['prompt'], x['image']),
+        'answer': x['groundtruth']
+    })
+    # print('Dataset Promp: ', dataset['prompt'])
+    return dataset
+
 
 def preprocess_dataset(dataset_name: str = "gsm8k", 
                        split: str = "train",

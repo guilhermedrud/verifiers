@@ -15,6 +15,7 @@
 import argparse
 import logging
 import os
+import copy
 from dataclasses import dataclass, field
 from typing import Optional, Sequence
 
@@ -231,6 +232,13 @@ class ScriptArguments:
         },
     )
 
+    allowed_local_media_path: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The allowed media path for vllm model"
+        },
+    )
+
 
 def main(script_args: ScriptArguments):
     if not is_fastapi_available():
@@ -257,6 +265,7 @@ def main(script_args: ScriptArguments):
         tensor_parallel_size=script_args.tensor_parallel_size,
         gpu_memory_utilization=script_args.gpu_memory_utilization,
         dtype=script_args.dtype,
+        allowed_local_media_path=script_args.allowed_local_media_path,
         # Automatic Prefix Caching caches the KV cache of existing queries, so that a new query can
         # directly reuse the KV cache if it shares the same prefix with one of the existing queries.
         # This is particularly useful here because we generate completions from the same prompts.
@@ -326,14 +335,33 @@ def main(script_args: ScriptArguments):
             guided_decoding=guided_decoding,
         )
 
+        def load_images_in_conversation(conversation):
+            print(conversation)
+            conversation_with_images = copy.deepcopy(conversation)
 
-        print(request.prompts)
+            for i in conversation_with_images:
+                for message in i:
+                    if isinstance(message.get("content"), list):
+                        for item in message["content"]:
+                            if item.get("type") == "image" and isinstance(item.get("image"), str):
+                                image_src = item["image"]
+                                try:
+                                    item["image"] = PIL.Image.open(image_src)
+                                except Exception as e:
+                                    print(f"Erro ao carregar imagem '{image_src}': {e}")
+                                    item["image"] = None  # ou `raise` dependendo do que você quer
+
+            return conversation_with_images
+
+
+        print(load_images_in_conversation(request.prompts))
+        prompts_input = load_images_in_conversation(request.prompts)
 
         completions = llm.chat(request.prompts,
                    sampling_params=sampling_params,
                    use_tqdm=False)
 
-        print(completions[0].__dict__)
+        print(completions)
 
         response = {'completions': [{'outputs': {'text': completion.outputs[0].text, 'token_ids': completion.outputs[0].token_ids}, 'prompt_token_ids': completion.prompt_token_ids} for completion in completions]}
 

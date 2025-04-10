@@ -4,6 +4,7 @@ from .envs.doublecheck_env import DoubleCheckEnv
 from .envs.math_env import MathEnv
 from .envs.simple_env import SimpleEnv
 from .envs.tool_env import ToolEnv
+from .envs.multimodal_env import MultimodalEnv
 from .trainers.grpo_env_trainer import GRPOEnvTrainer
 from .utils.data_utils import extract_boxed_answer, extract_hash_answer, preprocess_dataset
 from .utils.model_utils import get_model, get_tokenizer, get_model_and_tokenizer
@@ -23,6 +24,7 @@ __all__ = [
     "MathEnv",
     "SimpleEnv",
     "ToolEnv",
+    "MultimodalEnv",
     "GRPOEnvTrainer",
     "get_model",
     "get_tokenizer",

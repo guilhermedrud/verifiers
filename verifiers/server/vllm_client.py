@@ -181,7 +181,7 @@ class VLLMClient:
                 "guided_decoding_regex": guided_decoding_regex,
             },
         )
-        print(response)
+        print(response.json())
         return response.json()['completions']
 
     def generate_multimodal(
