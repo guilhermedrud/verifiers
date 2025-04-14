@@ -3,7 +3,7 @@ from typing import Dict, Any, Union, Tuple
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, Qwen2VLForConditionalGeneration
-
+from verifiers.models import Qwen2VLGRPO
 
 def is_liger_available() -> bool:
     return find_spec("liger_kernel") is not None
@@ -16,7 +16,7 @@ def get_model(model_name: str, model_kwargs: Union[Dict[str, Any], None] = None)
             use_cache=False,
         )
     if model_name == "Qwen/Qwen2-VL-2B-Instruct":
-        return Qwen2VLForConditionalGeneration.from_pretrained(model_name, **model_kwargs)
+        return Qwen2VLGRPO.from_pretrained(model_name, **model_kwargs)
     if is_liger_available():
         print("Using Liger kernel")
         from liger_kernel.transformers import AutoLigerKernelForCausalLM # type: ignore

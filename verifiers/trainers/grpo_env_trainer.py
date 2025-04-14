@@ -13,6 +13,9 @@ from transformers import (
 )
 
 
+from verifiers.envs.environment import Environment
+from verifiers.utils.logging_utils import print_prompt_completions_sample
+
 from verifiers.server.vllm_client import VLLMClient
 
 # monkey patch vllm client
@@ -27,8 +30,6 @@ from trl.data_utils import apply_chat_template, maybe_apply_chat_template
 from trl.import_utils import is_rich_available
 from trl.trainer.utils import pad
 
-from verifiers.envs.environment import Environment
-from verifiers.utils.logging_utils import print_prompt_completions_sample
 
 if is_peft_available():
     from peft import PeftConfig # type: ignore
@@ -248,12 +249,13 @@ class GRPOEnvTrainer(GRPOTrainer):
                     # For logging
                     table = {
                         "step": [str(self.state.global_step)] * len(rewards),
-                        "prompt": str(prompts_to_log),
+                        "prompt": prompts_to_log,
                         "completion": completions_to_log,
                         "reward": rewards.tolist(),
                     }
                     df = pd.DataFrame(table)
-                    wandb.log({"completions": wandb.Table(dataframe=df)}) # type: ignore
+
+                    wandb.log({"completions": wandb.Table(dataframe=df.describe())}) # type: ignore
 
         return {
             "prompt_ids": prompt_ids,

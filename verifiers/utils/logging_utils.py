@@ -45,12 +45,12 @@ def print_prompt_completions_sample(
     step: int,
 ) -> None:
 
-    console = Console()
+    console = Console(width=100)
     table = Table(show_header=True, header_style="bold white", expand=True)
 
     # Add columns
-    table.add_column("Prompt", style="bright_yellow")
-    table.add_column("Completion", style="bright_green")
+    table.add_column("Prompt", style="bright_yellow", overflow='fold')
+    table.add_column("Completion", style="bright_green",)
     table.add_column("Reward", style="bold cyan", justify="right")
 
     for prompt, completion, reward in zip(prompts, completions, rewards, strict=True):
