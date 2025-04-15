@@ -169,7 +169,7 @@ class MultiStepEnv(Environment):
         self,
         prompts: List[List[Dict[str, Any]]],
         answers: List[int],
-        llm: LLM,
+        llm_client: VLLMClient,
         sampling_params: SamplingParams,
         **kwargs: Any
     ) -> Dict[str, List[Sequence[int]] | List[str] |  List[List[Dict[str, Any]]]]:
@@ -193,7 +193,7 @@ class MultiStepEnv(Environment):
 
         # main loop
         while not all_completed:
-            states = self.step(states, llm, custom_sp)
+            states = self.step(states, llm_client, custom_sp)
             all_completed = all(state["completed"] for state in states)
 
         completion_messages = [s["messages"][s["prompt_messages"]:] for s in states]

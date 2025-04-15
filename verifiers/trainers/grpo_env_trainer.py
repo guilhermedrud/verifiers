@@ -41,6 +41,7 @@ class GRPOEnvTrainer(GRPOTrainer):
             callbacks: Optional[list[TrainerCallback]] = None,
             optimizers: tuple[Optional[torch.optim.Optimizer], Optional[torch.optim.lr_scheduler.LambdaLR]] = (None, None),
             peft_config: Optional["PeftConfig"] = None,
+            sampling_params= None,
             **kwargs,
     ):
         if not args.use_vllm: # type: ignore
@@ -57,9 +58,11 @@ class GRPOEnvTrainer(GRPOTrainer):
             callbacks=callbacks,
             optimizers=optimizers,
             peft_config=peft_config,
+            #sampling_params=None,
             **kwargs,
         )
         self.env = env
+        self.sampling_params = sampling_params
 
     def _generate_and_score_completions(
          self, inputs: dict[str, Union[torch.Tensor, Any]]   
@@ -90,7 +93,7 @@ class GRPOEnvTrainer(GRPOTrainer):
             env_result = self.env.generate(
                 prompts=all_prompts,
                 answers=all_answers,
-                llm=self.llm,
+                llm_client=self.vllm_client,
                 sampling_params=self.sampling_params,
             )
             completion_ids = env_result['ids']
