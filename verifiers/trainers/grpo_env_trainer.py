@@ -78,7 +78,6 @@ class GRPOEnvTrainer(GRPOTrainer):
     def _generate_and_score_completions(
          self, inputs: dict[str, Union[torch.Tensor, Any]]   
     ) -> dict[str, Union[torch.Tensor, Any]]:
-        print("Inputs: ", inputs)
         device = self.accelerator.device
         prompts = [x["prompt"] for x in inputs] # type: ignore
         answers = [x["answer"] for x in inputs]
@@ -249,13 +248,13 @@ class GRPOEnvTrainer(GRPOTrainer):
                     # For logging
                     table = {
                         "step": [str(self.state.global_step)] * len(rewards),
-                        "prompt": prompts_to_log,
+                        "prompt": [str(p) for p in prompts_to_log],
                         "completion": completions_to_log,
                         "reward": rewards.tolist(),
                     }
                     df = pd.DataFrame(table)
 
-                    wandb.log({"completions": wandb.Table(dataframe=df.describe())}) # type: ignore
+                    wandb.log({"completions": wandb.Table(dataframe=df)}) # type: ignore
 
         return {
             "prompt_ids": prompt_ids,

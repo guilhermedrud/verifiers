@@ -354,14 +354,12 @@ def main(script_args: ScriptArguments):
             return conversation_with_images
 
 
-        print(load_images_in_conversation(request.prompts))
-        prompts_input = load_images_in_conversation(request.prompts)
+        # print(load_images_in_conversation(request.prompts))
 
         completions = llm.chat(request.prompts,
                    sampling_params=sampling_params,
                    use_tqdm=False)
 
-        print(completions)
 
         response = {'completions': [{'outputs': {'text': completion.outputs[0].text, 'token_ids': completion.outputs[0].token_ids}, 'prompt_token_ids': completion.prompt_token_ids} for completion in completions]}
 

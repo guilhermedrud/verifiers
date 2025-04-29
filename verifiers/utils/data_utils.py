@@ -56,7 +56,7 @@ def format_prompt(prompt: str,
 def preprocess_img_dataset(dataset):
     dataset = dataset.map(lambda x: {
         'prompt': format_img_prompt(x['prompt'], x['image']),
-        'answer': x['groundtruth']
+        'answer': x['answer']
     })
     # print('Dataset Promp: ', dataset['prompt'])
     return dataset

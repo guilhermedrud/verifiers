@@ -59,10 +59,7 @@ class MultimodalEnv(SimpleEnv):
 
                  **kwargs: Any) -> Dict[str, List[Sequence[int]] | List[str] | List[List[Dict[str, Any]]]]:
 
-        if 'df_row' not in kwargs.keys():
-            raise "Sem imagem"
-        row = kwargs['df_row']
-        print('Prompts: ', prompts)
+        ## print('Prompts: ', prompts)
         states = [{
             "messages": [m],
             "prompt_ids": [],
@@ -82,38 +79,6 @@ class MultimodalEnv(SimpleEnv):
           "<|im_start|>user\n<|vision_start|><|image_pad|><|vision_end|>"
           "{}<|im_end|>\n"
           "<|im_start|>assistant\n")
-
-        # # Single prompt inference
-        # outputs = llm.generate([{
-        #     "prompt": prompt.format("Can i eat what's in this image?"),
-        #     "multi_modal_data": {"image": image},
-
-#         [[
-#     {
-#         "role": "system",
-#         "content": "You are a helpful assistant"
-#     },
-#     {
-#         "role": "user",
-#         "content": "Hello"
-#     },
-#     {
-#         "role": "assistant",
-#         "content": "Hello! How can I assist you today?"
-#     },
-#     {
-#         "role": "user",
-#         "content": [
-             
-#             {"type": "image_url", "image_url": {"url": "file:/mnt/disk1/luanborges/verifiers_vlm/images/img_8014.png"}},
-                    
-#             {"type": "text", "text": "Describe this image."},
-#         ],
-#     },
-# ]]
-        # }])
-
-        # prompts = [[{'role': 'user', 'content': [{'type': 'text', 'text': p}, {"type": "image_url", "image_url": {'url': 'file:'+row[i]['image']}}]}] for i, p in enumerate(prompts)]
 
         completions = llm.chat(prompts, n=n, repetition_penalty=repetition_penalty, temperature=temperature, top_p=top_p, top_k=top_k, min_p=min_p, max_tokens=max_tokens, guided_decoding_regex=guided_decoding_regex) # type: ignore
         for i, completion in enumerate(completions):

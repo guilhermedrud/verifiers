@@ -15,7 +15,7 @@ def get_model(model_name: str, model_kwargs: Union[Dict[str, Any], None] = None)
             attn_implementation="flash_attention_2",
             use_cache=False,
         )
-    if model_name == "Qwen/Qwen2-VL-2B-Instruct":
+    if "VL" in model_name:
         return Qwen2VLGRPO.from_pretrained(model_name, **model_kwargs)
     if is_liger_available():
         print("Using Liger kernel")
