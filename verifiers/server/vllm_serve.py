@@ -235,7 +235,7 @@ class ScriptArguments:
     allowed_local_media_path: Optional[str] = field(
         default=None,
         metadata={
-            "help": "The allowed media path for vllm model"
+            "help": "The allowed media path for the model"
         },
     )
 
@@ -334,24 +334,6 @@ def main(script_args: ScriptArguments):
             max_tokens=request.max_tokens,
             guided_decoding=guided_decoding,
         )
-
-        def load_images_in_conversation(conversation):
-            print(conversation)
-            conversation_with_images = copy.deepcopy(conversation)
-
-            for i in conversation_with_images:
-                for message in i:
-                    if isinstance(message.get("content"), list):
-                        for item in message["content"]:
-                            if item.get("type") == "image" and isinstance(item.get("image"), str):
-                                image_src = item["image"]
-                                try:
-                                    item["image"] = PIL.Image.open(image_src)
-                                except Exception as e:
-                                    print(f"Erro ao carregar imagem '{image_src}': {e}")
-                                    item["image"] = None  # ou `raise` dependendo do que você quer
-
-            return conversation_with_images
 
 
         # print(load_images_in_conversation(request.prompts))

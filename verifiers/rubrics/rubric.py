@@ -35,7 +35,7 @@ class Rubric(ABC):
     def exact_answer_reward_func(self, completions, answer, **kwargs) -> List[float]:
         """Reward function that checks if the final answer matches the expected answer."""
         responses = [self.get_last_answer(c) for c in completions]
-        return [1.0 if str(r) == str(a) else 0.0 for r, a in zip(responses, answer)]
+        return [1.0 if str(r).strip() == str(a).strip() else 0.0 for r, a in zip(responses, answer)]
 
     def int_answer_reward_func(self, completions, answer, **kwargs) -> List[float]:
         """Reward function that checks if the final answer is an integer."""

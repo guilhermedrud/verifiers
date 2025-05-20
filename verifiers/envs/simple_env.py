@@ -2,6 +2,7 @@ from abc import abstractmethod
 import json
 import random
 from typing import List, Dict, Sequence, Any, Union
+from verifiers.server.vllm_client import VLLMClient
 
 from datasets import Dataset
 

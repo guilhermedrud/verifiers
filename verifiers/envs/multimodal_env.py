@@ -1,6 +1,10 @@
 from typing import List, Dict, Any, Tuple
 from datasets import Dataset
+
+from verifiers.server.vllm_client import VLLMClient
 from trl.trainer.grpo_trainer import RewardFunc
+
+
 
 from verifiers.envs.simple_env import SimpleEnv
 from verifiers.parsers import XMLParser
